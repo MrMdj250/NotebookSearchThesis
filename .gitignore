@@ -1,0 +1,6 @@
+*.zip
+*__pycache__
+/bb.*
+sample_data/
+bb2733859v_2_1/
+.ipynb_checkpoints/
