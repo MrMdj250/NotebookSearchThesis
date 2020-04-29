@@ -18,9 +18,9 @@ except:
     sys.exit()
 
 # global vars
-INDEX="notebookindex"
 TYPE= "notebook"
 COLUMNS = ['nb_id', 'html_url', 'name', 'language', 'markdown', 'comments', 'code']
+VERSION = 4
 
 def get_ids_zip(path):
     path = path + '.zip'
@@ -41,37 +41,36 @@ def get_text_zip(nb_id, nbzip):
     markdown = []
     comments = []
     code = []
-    # raw = nbzip.read('nb_' + str(nb_id) + '.ipynb')
     with nbzip.open('nb_' + str(nb_id) + '.ipynb') as raw:
         try:
-            data = nbformat.read(raw, nbformat.NO_CONVERT)
+            data = nbformat.read(raw, VERSION)
             #data = json.load(fp)
         except:
             return None, None, None, None
-    if 'cells' in data:
+    if 'cells' in data.keys():
         cells = data['cells']
         if 'metadata' in data:
             if 'kernelspec' in data['metadata']:
                 if 'language' in data['metadata']['kernelspec']:
                     language = data['metadata']['kernelspec']['language']
                 else:
-                    language = None
+                    language = 'unknown'
             else:
-                language = None
+                language = 'unknown'
         else:
-            language = None
+            language = 'unknown'
         try:
             md_cells = [c for c in cells if c['cell_type'] == 'markdown']
             code_cells = [c for c in cells if c['cell_type'] == 'code']
         except:
             return None, None, None, None
-        if 'source' in md_cells:
-            for cell in md_cells:
+        for cell in md_cells:
+            if 'source' in cell:
                 markdown.append(cell['source'])
 
         # find comments '# ' for R and Python
-        if 'source' in code_cells:
-            for cell in code_cells:
+        for cell in code_cells:
+            if 'source' in code_cells:
                 source = cell['source']
                 code.append(source)
                 string = ''
@@ -89,6 +88,7 @@ df_nb = pd.read_csv('notebooks.csv')
 df_nb = df_nb.drop(['max_filesize','min_filesize', 'path', 'query_page', 'repo_id'], axis=1)
 
 ids, nbzip = get_ids_zip(folder)
+
 # append all extra columns to dataframe and export to pickle, zip
 starttime = time.time()
 final_df = pd.DataFrame(columns = COLUMNS)
@@ -107,7 +107,7 @@ for i in range(len(ids)):
 # save the dataframe to pickle
 midtime = time.time()
 print(midtime - starttime)
-n = folder + '.pkl'
+n = folder + '_new' + '.pkl'
 final_df.to_pickle(n)
 endtime = time.time()
 print(endtime - starttime)
