@@ -9,6 +9,7 @@ import nbformat
 import zipfile
 import csv
 import time
+from tqdm.auto import tqdm
 
 # argument handeling
 try:
@@ -46,7 +47,10 @@ def get_text_zip(nb_id, nbzip):
             data = nbformat.read(raw, VERSION)
             #data = json.load(fp)
         except:
-            return None, None, None, None
+            try:
+                data = nbformat.read(raw, nbformat.NO_CONVERT)
+            except:
+                return None, None, None, None
     if 'cells' in data.keys():
         cells = data['cells']
         if 'metadata' in data:
@@ -70,7 +74,7 @@ def get_text_zip(nb_id, nbzip):
 
         # find comments '# ' for R and Python
         for cell in code_cells:
-            if 'source' in code_cells:
+            if 'source' in cell:
                 source = cell['source']
                 code.append(source)
                 string = ''
@@ -92,7 +96,8 @@ ids, nbzip = get_ids_zip(folder)
 # append all extra columns to dataframe and export to pickle, zip
 starttime = time.time()
 final_df = pd.DataFrame(columns = COLUMNS)
-for i in range(len(ids)):
+# ids = [0,1,2,3,4,5,120951,23352,73638,179265,54493]
+for i in tqdm(range(len(ids))):
     language, markdown, comments, code = get_text_zip(ids[i], nbzip)
     if language != None or markdown != None or comments != None or code != None:
         row = df_nb.loc[df_nb['nb_id'] == ids[i]]
@@ -107,7 +112,7 @@ for i in range(len(ids)):
 # save the dataframe to pickle
 midtime = time.time()
 print(midtime - starttime)
-n = folder + '_new' + '.pkl'
+n = folder + '_new' + '.pkl'# + 'TEST' + '.pkl'
 final_df.to_pickle(n)
 endtime = time.time()
 print(endtime - starttime)
