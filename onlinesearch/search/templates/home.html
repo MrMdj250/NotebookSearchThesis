@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Notebook Search</title>
+  </head>
+  <body>
+    <form class="" action="" method="get">
+      <label for="name">Search:</label>
+      <input type="text" name="name" value="">
+      <label for="lang">Language:</label>
+      <select id="lang" name="lang">
+        <option value="All">All</option>
+        <option value="python">Python</option>
+        <option value="r">R</option>
+        <option value="julia">Julia</option>
+      </select>
+      <input type="submit"> <hr>
+    </form>
+    {% if results %}
+    <div>{{count}} results</div>
+    <div class="search_results">
+      {% for mytuple in results %}
+      <div class="single_results">
+        {{mytuple.0}}
+        {{mytuple.2}}
+      </div>
+    <p></p>
+    {% endfor %}
+    </div>
+    {% elif not search_term %}
+    {% endif %}
+  </body>
+</html>
