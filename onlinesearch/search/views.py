@@ -14,12 +14,10 @@ def search_index(request):
         name_term = request.GET['name']
     elif request.GET.get('language'):
         language_term = request.GET['language']
+        
     search_term = name_term or language_term
-    if search_term != None:
-        results = search(name=name_term, language=language_term)
-    else:
-        results = {}
-    #print(results)
+    results = search(name=name_term, language=language_term)
+
     context = {'results': results, 'count': len(results),
         'search_term': search_term}
     return render(request, 'home.html', context)
