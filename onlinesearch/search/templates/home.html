@@ -5,31 +5,57 @@
     <meta charset="utf-8">
     <title>Notebook Search</title>
   </head>
+  <style>
+    body {
+      background-color: gray;
+    }
+    .single_results {
+      background-color: white;
+    }
+    .count {
+      background-color: white;
+    }
+    form {
+      background-color: white;
+    }
+  </style>
   <body>
+    <h1> Notebook Search </h1>
     <form class="" action="" method="get">
       <label for="name">Search:</label>
       <input type="text" name="name" value="">
-      <label for="lang">Language:</label>
-      <select id="lang" name="lang">
+      <label for="language">Language:</label>
+      <select id="language" name="language">
         <option value="All">All</option>
         <option value="python">Python</option>
         <option value="r">R</option>
         <option value="julia">Julia</option>
       </select>
-      <input type="submit"> <hr>
+      <label for="index">Index:</label>
+      <select id="index" name="index">
+        <option value="All">All</option>
+        <option value="info">Info</option>
+        <option value="markdown">Markdown</option>
+        <option value="code">Code</option>
+        <option value="comments">Comments</option>
+        <option value="comments2">Comments2</option>
+      </select>
+      <input type="submit"><hr>
     </form>
     {% if results %}
-    <div>{{count}} results</div>
+    <div class="count">{{count}} results were found</div>
+    <hr>
     <div class="search_results">
       {% for mytuple in results %}
       <div class="single_results">
-        {{mytuple.0}}
+        <a href={{mytuple.1}}>{{mytuple.0}}</a> <br>
         {{mytuple.2}}
       </div>
     <p></p>
     {% endfor %}
     </div>
     {% elif not search_term %}
+    <p>enter search</p>
     {% endif %}
   </body>
 </html>

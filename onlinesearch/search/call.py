@@ -2,21 +2,26 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 
 def search(name="", language=""):
-    client = Elasticsearch()
-    q = Q("bool", should=[Q("match", name=name),
-    Q("match", language=language)], minimum_should_match=1)
-    s = Search(using=client, index="info").query(q)[0:20]
+    es = Elasticsearch()
+    if name == "":
+        q = Q("match", language=language)
+    elif language == "ALL":
+        q = Q("match_phrase", name=name)
+    else:
+        q = Q("bool", should=[Q("match", name=name),
+        Q("match", language=language)], minimum_should_match=1)
+    s = Search(using=es, index="info_clone").query(q)[0:20]
+    # TODO add more indices to search
+    # TODO ranking function
     response = s.execute()
-    print(response)
-    #print('Total %d hits found.' % int(response.hits.total.relation))
+    #print(response)
     search = get_results(response)
     return search
 
 def get_results(response):
     results = []
     for hit in response:
-        result_tuple = (hit.name,
-        hit.html_url, hit.language)
+        result_tuple = (hit.name, hit.html_url, hit.language)
         results.append(result_tuple)
     return results
 
