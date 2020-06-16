@@ -19,14 +19,14 @@ def search(name="", language="All", index="info_clone"):
 
 # check if a file exists in info_clone, where no checkpoint files exist
 def check_checkpoint(es, notebook_id):
-    if es.exists(index='info_clone', id=notebook_id):
+    if es.exists(index='info_clone2', id=notebook_id):
         return True
     else:
         return False
 
 def ranking(es, q):
     n = 20
-    s0 = Search(using=es, index='info_clone').query(q)[0:n]
+    s0 = Search(using=es, index='info_clone2').query(q)[0:n]
     s1 = Search(using=es, index='markdown').query(q)[0:n]
     s2 = Search(using=es, index='comments2').query(q)[0:n]
     s3 = Search(using=es, index='code').query(q)[0:n]
