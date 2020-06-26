@@ -4,7 +4,7 @@ import markdown
 import pickle
 from bs4 import BeautifulSoup
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, Q
+from elasticsearch_dsl import Search, Q, Document
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
@@ -50,9 +50,10 @@ def predict(name):
     pred = clf.predict(qfeat)
     return pred[0]
 
-def sum_to_one(list):
-    factor = 1 / float(sum(list))
-    return [x * factor for x in list]
+def sum_to_one(w):
+    factor = 1 / sum(w)
+    neww = [x * factor for x in w]
+    return neww
 
 # determines which index to base the search on
 def ranking(es, name, language, n):
@@ -91,15 +92,15 @@ def ranking(es, name, language, n):
     pred = predict(name)
     print('prediction:', pred)
     # # TODO:
-    f = 1 # factor to increase weights with
-    weights = sum_to_one(list) # normalize([1,1,1], norm='l2')
+    f = 1.0 # factor to increase weights with
+    weights = sum_to_one([1.0,1.0,1.0]) # normalize([1,1,1], norm='l2')
 
     if pred == 'code':
-        weights[3] = weights[3] + f
-        weights = sum_to_one(list)
+        weights[2] = weights[2] + f
+        weights = sum_to_one(weights)
     elif pred == 'markdown':
-        weights[3] = weights[3] + f
-        weights = sum_to_one(list)
+        weights[2] = weights[2] + f
+        weights = sum_to_one(weights)
     s1scores = [x*weights[0] for x in s1scores]
     s2scores = [x*weights[1] for x in s2scores]
     s3scores = [x*weights[2] for x in s3scores]
@@ -107,17 +108,22 @@ def ranking(es, name, language, n):
     tup2 = list(zip(s2ids, s2scores))
     tup3 = list(zip(s2ids, s2scores))
     tupt = tup1 + tup2 + tup3
-    tupsorted = sorted(tupt, key=lambda x:x[1])
-    tupsorted = [nid for nid in tupsorted[0] if check_checkpoint(es, nid)]
-    tupsorted = tupsorted[0:20]
-    final_ids = [x[0] for x in tupsorted]
+    tupsorted = sorted(tupt, key=lambda x:x[1], reverse=True)
+    test = []
+    for tup in tupsorted:
+        test.append(tup[0])
+    print(len(test))
+    final_ids = test
     # score = [s1,s2,s3]
     # dot weights query en ding
     # cosine similarity vector
-    # cosine_similarity()
     # cosine similarity new gewogen score
     # Lineaire combinatie
-    return elasticsearch_dsl.mget(final_ids, using=es, index='info_clone2')
+    response = []
+    if final_ids != []:
+        response = es.mget(index='info_clone2', body = {'ids': final_ids})
+        print(response)
+    return get_results2(es, response)
 
 # creates a text snippit for a search results
 def snippit(es, notebook_id):
@@ -156,6 +162,20 @@ def get_results(es, response):
         if check_checkpoint(es, nid):
             result_tuple = (hit.name, hit.html_url, hit.language, snippit(es, nid))
             results.append(result_tuple)
+    return results
+
+def get_results2(es, response):
+    results = []
+    for i in range(len(response['docs'])):
+        nid = response['docs'][i]['_id']
+        if '_source' in response['docs'][i]:
+            name = response['docs'][i]['_source']['name']
+            print('HIT:', name, nid)
+            if check_checkpoint(es, nid):
+                url = response['docs'][i]['_source']['html_url']
+                lan = response['docs'][i]['_source']['language']
+                result_tuple = (name, url, lan, snippit(es, nid))
+                results.append(result_tuple)
     return results
 
 # DEBUG:
