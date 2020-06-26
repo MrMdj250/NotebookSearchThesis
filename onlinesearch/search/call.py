@@ -13,6 +13,7 @@ from sklearn.preprocessing import normalize
 
 def search(name="", language="All", index="title"):
     n = 20
+    w = False
     es = Elasticsearch()
     qname = '*'+ name + '*'
     if index == 'title':
@@ -21,10 +22,15 @@ def search(name="", language="All", index="title"):
             q = Q('bool', should=[Q('wildcard', name=qname),
             Q('match', language=language)], minimum_should_match=2)
         else:
-            q = Q('wildcard', name=qname)
+            # q = Q('wildcard', name=qname)
+            w = True
+            q = Q('simple_query_string', query=qname, fields=['name'])
         print(q)
         s = Search(using=es, index=index).query(q)[0:n]
         response = s.execute()
+        if w and len(response) == 0:
+            s = Search(using=es, index=index).query(Q('wildcard', name=qname))[0:n]
+            response = s.execute()
         search = get_results(es, response)
     elif index == 'all':
         search = ranking(es, name, language, n)
@@ -165,17 +171,20 @@ def get_results(es, response):
     return results
 
 def get_results2(es, response):
+    s = set()
     results = []
     for i in range(len(response['docs'])):
         nid = response['docs'][i]['_id']
-        if '_source' in response['docs'][i]:
-            name = response['docs'][i]['_source']['name']
-            print('HIT:', name, nid)
-            if check_checkpoint(es, nid):
-                url = response['docs'][i]['_source']['html_url']
-                lan = response['docs'][i]['_source']['language']
-                result_tuple = (name, url, lan, snippit(es, nid))
-                results.append(result_tuple)
+        if nid not in s:
+            s.add(nid)
+            if '_source' in response['docs'][i]:
+                name = response['docs'][i]['_source']['name']
+                print('HIT:', name, nid)
+                if check_checkpoint(es, nid):
+                    url = response['docs'][i]['_source']['html_url']
+                    lan = response['docs'][i]['_source']['language']
+                    result_tuple = (name, url, lan, snippit(es, nid))
+                    results.append(result_tuple)
     return results
 
 # DEBUG:
